@@ -1,1 +1,6 @@
 .idea/*
+*/__pycache__/*
+__pycache__/*
+
+casino/migrations/__pycache__/
+mini_casino/__pycache__/settings.cpython-37.pyc
