@@ -11,12 +11,3 @@ class RegistrationForm(forms.ModelForm):
     class Meta:
         model = CustomerUser
         fields = ('username', 'password')
-
-
-class LoginForm(forms.ModelForm):
-    username = forms.CharField()
-    password = forms.CharField(widget=forms.PasswordInput())
-
-    class Meta:
-        model = CustomerUser
-        fields = ('username', 'password')
