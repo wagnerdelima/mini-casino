@@ -75,17 +75,27 @@ WSGI_APPLICATION = 'mini_casino.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'casino',
+#         'HOST': '127.0.0.1',
+#         'PORT': 2232,
+#         'USER': 'root',
+#         'PASSWORD': '0119',
+#     },
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'casino',
-        'HOST': '127.0.0.1',
-        'PORT': 2232,
-        'USER': 'root',
-        'PASSWORD': '0119',
+        'NAME': os.getenv('DATABASE_NAME'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
     },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
