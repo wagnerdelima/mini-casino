@@ -3,7 +3,7 @@
     <div class="container">
         <div class="jumbotron">
             <h1>Login here :</h1>
-            <form method="post" action="{% url 'casino:login' %}">
+            <form method="post" action="{% url 'casino:login_user' %}">
                 {% csrf_token %}
                 <label for="username">Username:</label>
                 <input type="text" name="username" placeholder="Username">
