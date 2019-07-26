@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 
-from casino.forms import RegistrationForm, LoginForm
+from casino.forms import RegistrationForm
 
 
 def index(request):
@@ -28,7 +28,9 @@ def register(request):
     if request.method == 'POST':
         user_form = RegistrationForm(data=request.POST)
         if user_form.is_valid():
-            user_form.save(commit=True)
+            user = user_form.save(commit=False)
+            user.set_password(user.password)
+            user.save()
             is_registered = True
         else:
             print(user_form.errors)
@@ -44,13 +46,13 @@ def register(request):
     )
 
 
-def login(request):
+def login_user(request):
     if request.method == 'POST':
         username: str = request.POST.get('username')
         password: str = request.POST.get('password')
         user = authenticate(username=username, password=password)
         if user and user.is_active:
-            login(request, user)
+            login(request=request, user=user)
             return HttpResponseRedirect(reverse('index'))
         else:
             # log stuff here

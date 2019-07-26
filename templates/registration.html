@@ -4,7 +4,8 @@
     <div class="container">
         <div class="jumbotron">
             {% if registered %}
-                <h1>Thank you for registering!</h1>
+                <h1>You have been registered!</h1>
+                <h3><a href="{% url 'index' %}">Go to dashboard</a></h3>
             {% else %}
                 <h1>Register Here</h1>
                 <h3>Just fill out the form.</h3>
