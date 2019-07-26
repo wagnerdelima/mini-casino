@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 
 from casino.forms import RegistrationForm
+from casino.models import Wallet
 
 
 def index(request):
@@ -53,6 +54,10 @@ def login_user(request):
         user = authenticate(username=username, password=password)
         if user and user.is_active:
             login(request=request, user=user)
+
+            # updates wallet for every login
+            wallet = Wallet.objects.get(customeruser=user)
+            wallet.give_login_bonus()
             return HttpResponseRedirect(reverse('index'))
         else:
             # log stuff here
