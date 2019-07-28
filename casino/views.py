@@ -75,8 +75,7 @@ def deposit(request):
         try:
             amount: str = float(request.POST.get('amount'))
             wallet = Wallet.objects.get(customeruser=request.user)
-            wallet.bonus_money += amount
-            wallet.save()
+            wallet.deposit_amount()
 
             deposited = True
         except ValueError:

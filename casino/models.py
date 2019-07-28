@@ -36,6 +36,16 @@ class Wallet(models.Model):
                   'deposits larger than 100 euros'
     )
 
+    deposit_bonus_amount = models.FloatField(
+        blank=False,
+        null=False,
+        default=100.0,
+        help_text='Amount of deposit to verify against. '
+                  'If customer deposits an amount larger '
+                  'than this field, we grant him a bonus of '
+                  'the field casino_bonus_deposit'
+    )
+
     is_bonus_depleted = models.BooleanField(
         default=False
     )
@@ -64,6 +74,22 @@ class Wallet(models.Model):
                     self.save()
         except IntegrityError:
             print('Could not deplete bonus')
+
+    def deposit_amount(self, amount: float):
+        """
+        Deposits amount and grants bonus if needed
+        """
+        try:
+            with transaction.atomic():
+                # adds deposit to the amount
+                self.real_money += amount
+                if amount > self.deposit_bonus_amount:
+                    # if amount is greater than
+                    # x euros we grant customers a bonus
+                    self.bonus_money += self.casino_bonus_deposit
+                self.save()
+        except IntegrityError:
+            print('Could not deposit')
 
     def __repr__(self):
         return f'{self.__class__.__name__}' \
