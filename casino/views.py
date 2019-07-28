@@ -64,3 +64,21 @@ def login_user(request):
             return HttpResponse('You have provided wrong credentials')
     else:
         return render(request, 'login.html', {})
+
+
+@login_required
+def deposit(request):
+    deposited = False
+    amount = 0.0
+    if request.method == 'POST' and request.user.is_authenticated:
+        try:
+            amount: str = float(request.POST.get('amount'))
+            wallet = Wallet.objects.get(customeruser=request.user)
+            wallet.bonus_money += amount
+            wallet.save()
+
+            deposited = True
+        except ValueError as exception:
+            print(exception)
+
+    return render(request, 'index.html', {'deposited': deposited, 'amount': amount})

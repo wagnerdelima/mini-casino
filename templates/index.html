@@ -6,9 +6,16 @@
             <h1>Welcome to the MiniCasino !</h1>
             {% if user.is_authenticated %}
                 <h2>Hello {{ user.username }}</h2>
-                <div class="center-buttons">
-                    <button class="button button-register">Deposit</button>
-                    <button class="button button-login">Spin</button>
+                <div>
+                    <form method="post" action="{% url 'casino:deposit' %}">
+                        {% csrf_token %}
+                        <input type="number" name="amount">
+                        <button>Deposit</button>
+                        {% if deposited %}
+                            You have deposited {{ amount }}
+                        {% endif %}
+                    </form>
+                    <button>Spin</button>
                 </div>
             {% else %}
                 <h2>Register or Login to Play in our MiniCasino</h2>
