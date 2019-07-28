@@ -69,6 +69,7 @@ def login_user(request):
 @login_required
 def deposit(request):
     deposited = False
+    error = False
     amount = 0.0
     if request.method == 'POST' and request.user.is_authenticated:
         try:
@@ -78,7 +79,15 @@ def deposit(request):
             wallet.save()
 
             deposited = True
-        except ValueError as exception:
-            print(exception)
+        except ValueError:
+            error = True
 
-    return render(request, 'index.html', {'deposited': deposited, 'amount': amount})
+    return render(
+        request,
+        'index.html',
+        {
+            'deposited': deposited,
+            'amount': amount,
+            'error': error
+        }
+    )

@@ -14,6 +14,9 @@
                         {% if deposited %}
                             You have deposited {{ amount }}
                         {% endif %}
+                        {% if error %}
+                            You need to input a value
+                        {% endif %}
                     </form>
                     <button>Spin</button>
                 </div>
