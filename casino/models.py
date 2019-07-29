@@ -1,3 +1,6 @@
+import random
+from typing import Tuple
+
 from django.db import models
 from django.db import transaction, IntegrityError
 
@@ -75,7 +78,7 @@ class Wallet(models.Model):
         except IntegrityError:
             print('Could not deplete bonus')
 
-    def deposit_amount(self, amount: float):
+    def deposit_amount(self, amount: float) -> Tuple[float, float]:
         """
         Deposits amount and grants bonus if needed
         """
@@ -90,6 +93,32 @@ class Wallet(models.Model):
                 self.save()
         except IntegrityError:
             print('Could not deposit')
+
+        return self.real_money, self.bonus_money
+
+    def spin(self, spin_amount: float) -> Tuple[float, float, str]:
+        """
+        Spins amounts. Takes spined amount from real wallet.
+        Otherwise takes it from bunos wallet.
+        """
+        win_amount = spin_amount * 2
+        choice = random.choice(['won', 'lost'])
+        try:
+            with transaction.atomic():
+                if self.real_money > 0 and choice == 'won':
+                    self.real_money += win_amount
+                elif self.real_money > 0 and choice == 'lost':
+                    self.real_money -= spin_amount
+                elif self.real_money == 0 and choice == 'won':
+                    self.bonus_money += win_amount
+                elif self.real_money == 0 and choice == 'lost':
+                    self.bonus_money -= spin_amount
+
+                self.save()
+        except IntegrityError:
+            print('Could not spin amount')
+
+        return win_amount, spin_amount, choice
 
     def __repr__(self):
         return f'{self.__class__.__name__}' \

@@ -14,11 +14,15 @@
                         {% if deposited %}
                             You have deposited {{ amount }}
                         {% endif %}
-                        {% if error %}
-                            You need to input a value
-                        {% endif %}
                     </form>
-                    <button>Spin</button>
+                    <form method="post" action="{% url 'casino:spin' %}">
+                        {% csrf_token %}
+                        <input type="number" name="spin_amount">
+                        <button>Spin</button>
+                    </form>
+                {% if spined %}
+                    You {{ choice }} {{ value }} euros.
+                {% endif %}
                 </div>
             {% else %}
                 <h2>Register or Login to Play in our MiniCasino</h2>
