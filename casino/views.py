@@ -25,11 +25,12 @@ def sum_bonuses(user_id):
 def index(request):
     real_money: float = 0.0
     bonus_money: float = 0.0
-    bonus = None
+    wagering = 0.0
     if request.user.is_authenticated:
         wallet = Wallet.objects.get(customer_id=request.user.id)
 
         bonus_money, bonus = sum_bonuses(request.user.id)
+        wagering = bonus.wagering_requirement
         real_money = wallet.real_money
     return render(
         request,
@@ -37,7 +38,7 @@ def index(request):
         {
             'real': real_money,
             'bonus': bonus_money,
-            'wager': bonus.wagering_requirement
+            'wager': wagering
         }
     )
 

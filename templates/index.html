@@ -19,10 +19,12 @@
                         {% csrf_token %}
                         <button>Spin</button>
                     </form>
-                {% if spined %}
-                    You {{ choice }} {{ value }} euros.
-                {% endif %}
-                    Next wagering {{ wager }}
+                    {% if spined %}
+                        You {{ choice }} {{ value }} euros.
+                    {% endif %}
+                    {% if wager %}
+                        Next wagering {{ wager }}
+                    {% endif %}
                 </div>
             {% else %}
                 <h2>Register or Login to Play in our MiniCasino</h2>
