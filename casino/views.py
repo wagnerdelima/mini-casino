@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 
 from casino.forms import RegistrationForm
-from casino.models import Wallet
+from casino.models import Wallet, Bonus
 
 
 def index(request):
@@ -14,8 +14,9 @@ def index(request):
     bonus_money: float = 0.0
     if request.user.is_authenticated:
         wallet = Wallet.objects.get(customeruser=request.user)
+        bonus = Bonus.objects.get(customeruser=request.user)
         real_money = wallet.real_money
-        bonus_money = wallet.bonus_money
+        bonus_money = bonus.bonus_money
     return render(
         request,
         'index.html',
@@ -69,8 +70,8 @@ def login_user(request):
             login(request=request, user=user)
 
             # updates wallet for every login
-            wallet = Wallet.objects.get(customeruser=user)
-            wallet.give_login_bonus()
+            bonus = Bonus.objects.get(customeruser=user)
+            bonus.give_login_bonus()
             return HttpResponseRedirect(reverse('index'))
         else:
             # log stuff here
@@ -101,18 +102,15 @@ def deposit(request):
             'deposited': deposited,
             'amount': abs(amount),
             'real': wallet.real_money,
-            'bonus': wallet.bonus_money,
+            'bonus': wallet.bonus.bonus_money,
         }
     )
 
 
 @login_required
 def spin(request):
-    spin_amount: float = 2.0
-    win, lose, choice = 0., 0., ''
-    spined: bool = False
-    wallet = None
     if request.method == 'POST':
+        spin_amount: float = 2.0
         try:
             spin_amount = float(request.POST.get('spin_amount'))
         except ValueError:
@@ -122,14 +120,15 @@ def spin(request):
         win, lose, choice = wallet.spin(abs(spin_amount))
         spined = True
 
-    return render(
-        request,
-        'index.html',
-        {
-            'real': wallet.real_money,
-            'bonus': wallet.bonus_money,
-            'value': win if choice == 'won' else lose,
-            'choice': choice,
-            'spined': spined
-        }
-    )
+        return render(
+            request,
+            'index.html',
+            {
+                'real': wallet.real_money,
+                'bonus': wallet.bonus.bonus_money,
+                'value': win if choice == 'won' else lose,
+                'choice': choice,
+                'spined': spined
+            }
+        )
+    return redirect('index')
