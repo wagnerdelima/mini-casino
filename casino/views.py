@@ -135,6 +135,10 @@ def spin(request):
         wallet = Wallet.objects.get(customer_id=request.user.id)
         win, lose, choice = wallet.spin()
         bonus_money, wager = sum_bonuses(request.user.id)
+        bonus_wagered_to_wallet = wager.automatic_wagering(
+            wallet.amount_lost
+        )
+        wallet.grant_wagered(bonus_wagered_to_wallet)
         spined = True
 
         return render(

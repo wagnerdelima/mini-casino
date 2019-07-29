@@ -52,7 +52,7 @@ class Bonus(models.Model):
         cashing: int = random.randint(1, 20) * self.bonus_money
         self.wagering_requirement = cashing
 
-    def is_wallet_depleted(self):
+    def _is_depleted(self):
         """
         Checks if bonus is 0 and
         therefore depleted
@@ -63,7 +63,7 @@ class Bonus(models.Model):
     def deplete_bonus(self):
         try:
             with transaction.atomic():
-                if self.is_wallet_depleted():
+                if self._is_depleted():
                     self.is_bonus_depleted = True
         except IntegrityError:
             print('Could not deplete bonus')
@@ -77,6 +77,17 @@ class Bonus(models.Model):
         except IntegrityError:
             print('Could not deplete bonus')
 
+    def automatic_wagering(self, lost_amount: float) -> float:
+        bonus_money = 0.0
+        if lost_amount >= self.wagering_requirement:
+            self.is_bonus_depleted = True
+            bonus_money = self.bonus_money
+            self.bonus_money = 0
+
+            self.save()
+
+        return bonus_money
+
     def __repr__(self):
         return f'{self.__class__.__name__}' \
                f' {self.bonus_money}'
@@ -89,6 +100,13 @@ class Wallet(models.Model):
         default=0.0,
         help_text='Customer real amount'
                   ' of cash by deposits or wagered bonus.'
+    )
+
+    amount_lost = models.FloatField(
+        blank=False,
+        null=False,
+        default=0.0,
+        help_text='Amount of real money lost on spins.'
     )
 
     customer = models.ForeignKey(
@@ -151,19 +169,21 @@ class Wallet(models.Model):
             bonus = Bonus.objects.filter(
                 bonus_money__gt=0,
                 is_bonus_depleted=False
-            )[0]
+            ).order_by('-wagering_requirement')[0]
 
             with transaction.atomic():
-
                 if choice == 'won':
                     if self.real_money > 0:
                         self.real_money += win_amount
+
                     elif self.real_money == 0 and bonus.bonus_money > 0:
                         bonus.bonus_money += win_amount
                 else:
                     if self.real_money > 0 and \
                             self.real_money >= spin_amount:
                         self.real_money -= spin_amount
+                        # for wagering purposes
+                        self.amount_lost += spin_amount
 
                     if self.real_money == 0 and \
                             bonus.bonus_money >= spin_amount:
@@ -176,6 +196,10 @@ class Wallet(models.Model):
             print('Could not spin amount')
 
         return win_amount, spin_amount, choice
+
+    def grant_wagered(self, wagered_amount: float):
+        self.real_money += wagered_amount
+        self.save()
 
     def __repr__(self):
         return f'{self.__class__.__name__}' \
