@@ -6,17 +6,27 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 
 from casino.forms import RegistrationForm
-from casino.models import Wallet, Bonus
+from casino.models import Wallet, Bonus, CustomerUser
+
+
+def sum_bonuses(user_id):
+    bonus_money = 0.0
+    bonuses = Bonus.objects.filter(customer_id=user_id)
+
+    for bonus in bonuses:
+        bonus_money += bonus.bonus_money
+
+    return bonus_money
 
 
 def index(request):
     real_money: float = 0.0
     bonus_money: float = 0.0
     if request.user.is_authenticated:
-        wallet = Wallet.objects.get(customeruser=request.user)
-        bonus = Bonus.objects.get(customeruser=request.user)
+        wallet = Wallet.objects.get(customer_id=request.user.id)
+
+        bonus_money = sum_bonuses(request.user.id)
         real_money = wallet.real_money
-        bonus_money = bonus.bonus_money
     return render(
         request,
         'index.html',
@@ -46,6 +56,9 @@ def register(request):
             user = user_form.save(commit=False)
             user.set_password(user.password)
             user.save()
+
+            user = CustomerUser.objects.get(id=user.id)
+            Wallet(customer=user).save()
             is_registered = True
         else:
             print(user_form.errors)
@@ -70,8 +83,10 @@ def login_user(request):
             login(request=request, user=user)
 
             # updates wallet for every login
-            bonus = Bonus.objects.get(customeruser=user)
+            user = CustomerUser.objects.get(id=user.id)
+            bonus = Bonus(customer=user)
             bonus.give_login_bonus()
+            bonus.save()
             return HttpResponseRedirect(reverse('index'))
         else:
             # log stuff here
@@ -84,12 +99,14 @@ def login_user(request):
 def deposit(request):
     deposited = False
     amount = 0.0
-    wallet: Wallet = None
+    real: float = 0.0
+    bonus: float = 0.0
     if request.method == 'POST':
         try:
             amount = float(request.POST.get('amount'))
-            wallet = Wallet.objects.get(customeruser=request.user)
-            wallet.deposit_amount(amount)
+            wallet = Wallet.objects.get(customer_id=request.user.id)
+            real = wallet.deposit_amount(amount)
+            bonus = sum_bonuses(request.user.id)
 
             deposited = True
         except ValueError:
@@ -101,8 +118,8 @@ def deposit(request):
         {
             'deposited': deposited,
             'amount': abs(amount),
-            'real': wallet.real_money,
-            'bonus': wallet.bonus.bonus_money,
+            'real': real,
+            'bonus': bonus,
         }
     )
 
