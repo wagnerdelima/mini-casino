@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect, HttpResponse
@@ -82,10 +82,9 @@ def login_user(request):
 @login_required
 def deposit(request):
     deposited = False
-    error = False
     amount = 0.0
     wallet: Wallet = None
-    if request.method == 'POST' and request.user.is_authenticated:
+    if request.method == 'POST':
         try:
             amount = float(request.POST.get('amount'))
             wallet = Wallet.objects.get(customeruser=request.user)
@@ -93,17 +92,21 @@ def deposit(request):
 
             deposited = True
         except ValueError:
-            error = True
-            print('There was an error processing the deposit.')
+            return redirect('index')
 
     return render(
         request,
         'index.html',
         {
             'deposited': deposited,
-            'amount': amount,
-            'error': error,
+            'amount': abs(amount),
             'real': wallet.real_money,
             'bonus': wallet.bonus_money,
         }
     )
+
+
+@login_required
+def spin(request):
+    if request.method == 'POST':
+        pass
