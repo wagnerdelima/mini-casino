@@ -63,8 +63,8 @@ class Bonus(models.Model):
     def deplete_bonus(self):
         try:
             with transaction.atomic():
-                self.is_bonus_depleted = True
-                self.save()
+                if self.is_wallet_depleted():
+                    self.is_bonus_depleted = True
         except IntegrityError:
             print('Could not deplete bonus')
 
@@ -148,8 +148,13 @@ class Wallet(models.Model):
         win_amount = spin_amount * 2
         choice = random.choice(['won', 'lost'])
         try:
+            bonus = Bonus.objects.filter(
+                bonus_money__gt=0,
+                is_bonus_depleted=False
+            )[0]
+
             with transaction.atomic():
-                bonus = Bonus.objects.filter(bonus_money__gt=0)[0]
+
                 if choice == 'won':
                     if self.real_money > 0:
                         self.real_money += win_amount
@@ -164,6 +169,7 @@ class Wallet(models.Model):
                             bonus.bonus_money >= spin_amount:
                         bonus.bonus_money -= spin_amount
 
+                bonus.deplete_bonus()
                 bonus.save()
                 self.save()
         except (IntegrityError, Bonus.DoesNotExist):

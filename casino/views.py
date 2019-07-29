@@ -11,21 +11,25 @@ from casino.models import Wallet, Bonus, CustomerUser
 
 def sum_bonuses(user_id):
     bonus_money = 0.0
-    bonuses = Bonus.objects.filter(customer_id=user_id)
+    bonuses = Bonus.objects.filter(
+        customer_id=user_id,
+        is_bonus_depleted=False
+    ).order_by('-wagering_requirement')
 
     for bonus in bonuses:
         bonus_money += bonus.bonus_money
 
-    return bonus_money
+    return bonus_money, bonuses[0]
 
 
 def index(request):
     real_money: float = 0.0
     bonus_money: float = 0.0
+    bonus = None
     if request.user.is_authenticated:
         wallet = Wallet.objects.get(customer_id=request.user.id)
 
-        bonus_money = sum_bonuses(request.user.id)
+        bonus_money, bonus = sum_bonuses(request.user.id)
         real_money = wallet.real_money
     return render(
         request,
@@ -33,6 +37,7 @@ def index(request):
         {
             'real': real_money,
             'bonus': bonus_money,
+            'wager': bonus.wagering_requirement
         }
     )
 
@@ -129,7 +134,7 @@ def spin(request):
     if request.method == 'POST':
         wallet = Wallet.objects.get(customer_id=request.user.id)
         win, lose, choice = wallet.spin()
-        bonus = sum_bonuses(request.user.id)
+        bonus_money, wager = sum_bonuses(request.user.id)
         spined = True
 
         return render(
@@ -137,7 +142,8 @@ def spin(request):
             'index.html',
             {
                 'real': wallet.real_money,
-                'bonus': bonus,
+                'bonus': bonus_money,
+                'wager': wager.wagering_requirement,
                 'value': win if choice == 'won' else lose,
                 'choice': choice,
                 'spined': spined
