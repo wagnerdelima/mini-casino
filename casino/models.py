@@ -139,31 +139,34 @@ class Wallet(models.Model):
 
         return self.real_money
 
-    def spin(self, spin_amount: float) -> Tuple[float, float, str]:
+    def spin(self) -> Tuple[float, float, str]:
         """
         Spins amounts. Takes spined amount from real wallet.
         Otherwise takes it from bunos wallet.
         """
+        spin_amount = 2.0
         win_amount = spin_amount * 2
         choice = random.choice(['won', 'lost'])
         try:
             with transaction.atomic():
+                bonus = Bonus.objects.filter(bonus_money__gt=0)[0]
                 if choice == 'won':
                     if self.real_money > 0:
                         self.real_money += win_amount
-                    elif self.real_money == 0 and self.bonus.bonus_money > 0:
-                        self.bonus.bonus_money += win_amount
+                    elif self.real_money == 0 and bonus.bonus_money > 0:
+                        bonus.bonus_money += win_amount
                 else:
                     if self.real_money > 0 and \
                             self.real_money >= spin_amount:
                         self.real_money -= spin_amount
 
                     if self.real_money == 0 and \
-                            self.bonus.bonus_money >= spin_amount:
-                        self.bonus.bonus_money -= spin_amount
+                            bonus.bonus_money >= spin_amount:
+                        bonus.bonus_money -= spin_amount
 
+                bonus.save()
                 self.save()
-        except IntegrityError:
+        except (IntegrityError, Bonus.DoesNotExist):
             print('Could not spin amount')
 
         return win_amount, spin_amount, choice
@@ -174,22 +177,5 @@ class Wallet(models.Model):
 
 
 class CustomerUser(User):
-    # def save(self, *args, **kwargs):
-    #     try:
-    #         with transaction.atomic():
-    #             wallet = Wallet()
-    #             wallet.save()
-    #
-    #             bonus = Bonus()
-    #             bonus.save()
-    #
-    #             self.wallet = wallet
-    #             self.bonus = bonus
-    #
-    #             super(CustomerUser, self).save(*args, **kwargs)
-    #
-    #     except IntegrityError as exception:
-    #         print(str(exception))
-
     def __repr__(self):
         return f'{self.__class__.__name__} {self.username}'

@@ -127,14 +127,9 @@ def deposit(request):
 @login_required
 def spin(request):
     if request.method == 'POST':
-        spin_amount: float = 2.0
-        try:
-            spin_amount = float(request.POST.get('spin_amount'))
-        except ValueError:
-            print(f'Using sping amount of {spin_amount} euros')
-
-        wallet = Wallet.objects.get(customeruser=request.user)
-        win, lose, choice = wallet.spin(abs(spin_amount))
+        wallet = Wallet.objects.get(customer_id=request.user.id)
+        win, lose, choice = wallet.spin()
+        bonus = sum_bonuses(request.user.id)
         spined = True
 
         return render(
@@ -142,7 +137,7 @@ def spin(request):
             'index.html',
             {
                 'real': wallet.real_money,
-                'bonus': wallet.bonus.bonus_money,
+                'bonus': bonus,
                 'value': win if choice == 'won' else lose,
                 'choice': choice,
                 'spined': spined

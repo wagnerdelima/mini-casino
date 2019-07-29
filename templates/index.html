@@ -17,7 +17,6 @@
                     </form>
                     <form method="post" action="{% url 'casino:spin' %}">
                         {% csrf_token %}
-                        <input type="number" name="spin_amount">
                         <button>Spin</button>
                     </form>
                 {% if spined %}
