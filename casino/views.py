@@ -10,7 +10,20 @@ from casino.models import Wallet
 
 
 def index(request):
-    return render(request, 'index.html')
+    real_money: float = 0.0
+    bonus_money: float = 0.0
+    if request.user.is_authenticated:
+        wallet = Wallet.objects.get(customeruser=request.user)
+        real_money = wallet.real_money
+        bonus_money = wallet.bonus_money
+    return render(
+        request,
+        'index.html',
+        {
+            'real': real_money,
+            'bonus': bonus_money,
+        }
+    )
 
 
 @login_required
@@ -71,15 +84,17 @@ def deposit(request):
     deposited = False
     error = False
     amount = 0.0
+    wallet: Wallet = None
     if request.method == 'POST' and request.user.is_authenticated:
         try:
-            amount: str = float(request.POST.get('amount'))
+            amount = float(request.POST.get('amount'))
             wallet = Wallet.objects.get(customeruser=request.user)
-            wallet.deposit_amount()
+            wallet.deposit_amount(amount)
 
             deposited = True
         except ValueError:
             error = True
+            print('There was an error processing the deposit.')
 
     return render(
         request,
@@ -87,6 +102,8 @@ def deposit(request):
         {
             'deposited': deposited,
             'amount': amount,
-            'error': error
+            'error': error,
+            'real': wallet.real_money,
+            'bonus': wallet.bonus_money,
         }
     )

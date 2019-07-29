@@ -82,7 +82,7 @@ class Wallet(models.Model):
         try:
             with transaction.atomic():
                 # adds deposit to the amount
-                self.real_money += amount
+                self.real_money += abs(amount)
                 if amount > self.deposit_bonus_amount:
                     # if amount is greater than
                     # x euros we grant customers a bonus
