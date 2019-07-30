@@ -80,7 +80,7 @@ class Bonus(models.Model):
                     self.wagering()
                     self.save()
         except IntegrityError:
-            print('Could not deplete bonus')
+            logging.error('Could not assign bonus')
 
     def automatic_wagering(self, lost_amount: float) -> float:
         bonus_money = 0.0
