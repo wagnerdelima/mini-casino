@@ -49,8 +49,10 @@ class Bonus(models.Model):
     )
 
     def wagering(self):
-        cashing: int = random.randint(1, 20) * self.bonus_money
-        self.wagering_requirement = cashing
+        rand_number = random.randint(1, 20)
+        self.wagering_requirement = rand_number * self.bonus_money
+
+        return rand_number
 
     def _is_depleted(self):
         """
@@ -72,6 +74,7 @@ class Bonus(models.Model):
         try:
             with transaction.atomic():
                     self.bonus_money += self.casino_bonus_login
+                    # assign wagering requirement to bonus
                     self.wagering()
                     self.save()
         except IntegrityError:
