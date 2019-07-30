@@ -1,4 +1,5 @@
 import random
+import logging
 from typing import Tuple
 
 from django.db import models
@@ -67,8 +68,9 @@ class Bonus(models.Model):
             with transaction.atomic():
                 if self._is_depleted():
                     self.is_bonus_depleted = True
+                    self.save()
         except IntegrityError:
-            print('Could not deplete bonus')
+            logging.error('Could not deplete bonus')
 
     def give_login_bonus(self):
         try:
