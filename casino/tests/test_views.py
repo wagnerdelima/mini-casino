@@ -90,3 +90,38 @@ class ViewTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertTemplateUsed(response, 'registration.html')
         self.assertContains(response, 'Just fill out the form')
+
+    def test_login_user_success(self):
+        url = reverse('casino:login_user')
+        response = self.client.post(
+            url,
+            data={
+                'username': self.user.username,
+                'password': 'password',
+            },
+            follow=True
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, f'Hello {self.user.username}')
+        self.assertTemplateNotUsed('index.html')
+
+    def test_login_inactive_user_fail(self):
+        self.user.is_active = False
+        self.user.save()
+        url = reverse('casino:login_user')
+        response = self.client.post(
+            url,
+            data={
+                'username': self.user.username,
+                'password': 'password',
+            },
+            follow=True
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertContains(response, 'You have provided wrong credentials')
+
+    def test_login_page_renders_success(self):
+        url = reverse('casino:login_user')
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertTemplateNotUsed('index.html')

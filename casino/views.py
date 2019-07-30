@@ -89,14 +89,13 @@ def login_user(request):
         if user and user.is_active:
             login(request=request, user=user)
 
-            # updates wallet for every login
+            # grants bonus for every login
             user = CustomerUser.objects.get(id=user.id)
             bonus = Bonus(customer=user)
             bonus.give_login_bonus()
             bonus.save()
             return HttpResponseRedirect(reverse('index'))
         else:
-            # log stuff here
             return HttpResponse('You have provided wrong credentials')
     else:
         return render(request, 'login.html', {})
