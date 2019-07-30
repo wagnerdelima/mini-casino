@@ -6,6 +6,7 @@ from django.db import IntegrityError
 from model_mommy.mommy import make
 
 from casino.models import Bonus
+from casino.models import Wallet
 from casino.models import CustomerUser
 
 
@@ -17,6 +18,10 @@ class BonusTestCase(TestCase):
             bonus_money=30,
             customer=self.user
         )
+
+    def tearDown(self):
+        self.user.delete()
+        self.bonus.delete()
 
     def test_bonus_wagering_success(self):
         rand_number = self.bonus.wagering()
@@ -98,3 +103,57 @@ class BonusTestCase(TestCase):
             f' {self.bonus.bonus_money}',
             self.bonus.__str__()
         )
+
+
+class WalletTestCase(TestCase):
+    def setUp(self):
+        self.user = make(CustomerUser)
+
+    def tearDown(self):
+        self.user.delete()
+
+    def test_deposit_amount_no_bonus_success(self):
+        wallet = make(Wallet, customer=self.user)
+        amount = 100
+        expected = wallet.deposit_amount(amount)
+
+        count_wallets = Wallet.objects.filter(customer=self.user).count()
+        count_bonuses = Bonus.objects.filter(customer=self.user).count()
+
+        self.assertEqual(amount, expected)
+        self.assertEqual(amount, wallet.real_money)
+        self.assertEqual(1, count_wallets)
+        self.assertEqual(0, count_bonuses)
+
+    def test_deposit_amount_with_bonus_success(self):
+        wallet = make(Wallet, customer=self.user)
+        amount = 110
+        expected = wallet.deposit_amount(amount)
+
+        count_wallets = Wallet.objects.filter(customer=self.user).count()
+        count_bonus = Bonus.objects.filter(customer=self.user).count()
+        bonus = Bonus.objects.get(customer=self.user)
+
+        self.assertEqual(amount, expected)
+        self.assertEqual(amount, wallet.real_money)
+        self.assertEqual(amount, wallet.real_money)
+        self.assertEqual(wallet.casino_bonus_deposit, bonus.bonus_money)
+        self.assertEqual(1, count_wallets)
+        self.assertEqual(1, count_bonus)
+
+    def test_deposit_amount_negative_amount_success(self):
+        wallet = make(Wallet, customer=self.user)
+        amount = -100
+        expected = wallet.deposit_amount(amount)
+        self.assertEqual(abs(amount), expected)
+        self.assertEqual(abs(amount), wallet.real_money)
+
+    def test_deposit_amount_fail(self):
+        bonus = make(Bonus, customer=self.user)
+        with mock.patch('casino.models.transaction.atomic') \
+                as mock_atomic:
+            mock_atomic.side_effect = IntegrityError
+            with mock.patch('casino.models.logging') as mock_log:
+                wallet = make(Wallet, customer=self.user)
+                wallet.deposit_amount(110)
+                mock_log.error.called_once()

@@ -158,7 +158,7 @@ class Wallet(models.Model):
                     bonus.save()
                 self.save()
         except IntegrityError:
-            print('Could not deposit')
+            logging.error('Could not deposit')
 
         return self.real_money
 
