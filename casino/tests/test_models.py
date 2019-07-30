@@ -74,3 +74,27 @@ class BonusTestCase(TestCase):
                 mock_log.error.called_once()
                 self.assertEqual(0, bonus.bonus_money)
 
+    def test_automatic_wagering_success(self):
+        self.bonus.wagering()
+        lost_amount = self.bonus.wagering_requirement + 1
+        to_be_wagered = self.bonus.bonus_money
+        wagered = self.bonus.automatic_wagering(lost_amount)
+
+        self.assertEqual(0, self.bonus.bonus_money)
+        self.assertEqual(to_be_wagered, wagered)
+        self.assertTrue(self.bonus.is_bonus_depleted)
+
+    def test_automatic_wagering_fail(self):
+        self.bonus.wagering()
+
+        lost_amount = self.bonus.wagering_requirement - 10
+        wagered = self.bonus.automatic_wagering(lost_amount)
+
+        self.assertEqual(0, wagered)
+
+    def test__str__(self):
+        self.assertEqual(
+            f'{self.bonus.__class__.__name__}'
+            f' {self.bonus.bonus_money}',
+            self.bonus.__str__()
+        )
