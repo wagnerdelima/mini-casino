@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect
 
 from django.contrib.auth import authenticate, login, logout
@@ -67,7 +68,7 @@ def register(request):
             Wallet(customer=user).save()
             is_registered = True
         else:
-            print(user_form.errors)
+            logging.error(user_form.errors)
     else:
         user_form = RegistrationForm()
     return render(
