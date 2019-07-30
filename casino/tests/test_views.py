@@ -18,7 +18,8 @@ class ViewTestCase(TestCase):
 
         self.wallet = make(Wallet, customer=self.user)
         # deposits and creates bonus
-        self.wallet.deposit_amount(110)
+        self.deposit_amount = 110
+        self.wallet.deposit_amount(self.deposit_amount)
 
         self.client = Client()
 
@@ -125,3 +126,25 @@ class ViewTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(200, response.status_code)
         self.assertTemplateNotUsed('index.html')
+
+    def test_deposits_success(self):
+        url = reverse('casino:deposit')
+        self.client.login(username=self.user.username, password='password')
+        response = self.client.post(
+            url,
+            data={'amount': 120},
+            follow=True
+        )
+
+        wallet = Wallet.objects.get(customer=self.user)
+        self.assertEqual(120 + self.deposit_amount, wallet.real_money)
+        self.assertEqual(200, response.status_code)
+        self.assertTemplateUsed('index.html')
+
+    def test_spin(self):
+        url = reverse('casino:spin')
+        self.client.login(username=self.user.username, password='password')
+        response = self.client.post(url)
+
+        self.assertEqual(200, response.status_code)
+        self.assertTemplateUsed('index.html')

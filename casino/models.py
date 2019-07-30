@@ -73,6 +73,9 @@ class Bonus(models.Model):
             logging.error('Could not deplete bonus')
 
     def give_login_bonus(self):
+        """
+        Grants login bonus
+        """
         try:
             with transaction.atomic():
                     self.bonus_money += self.casino_bonus_login
@@ -83,6 +86,9 @@ class Bonus(models.Model):
             logging.error('Could not assign bonus')
 
     def automatic_wagering(self, lost_amount: float) -> float:
+        """
+        Automatically wagers bonus onto the real wallet.
+        """
         bonus_money = 0.0
         if lost_amount >= self.wagering_requirement:
             self.is_bonus_depleted = True
@@ -205,6 +211,10 @@ class Wallet(models.Model):
         return win_amount, spin_amount, choice
 
     def grant_wagered(self, wagered_amount: float) -> None:
+        """
+        If user spends amount equal or superior
+         to wagering amount they get an automatic wagering
+        """
         self.real_money += wagered_amount
         self.save()
 
