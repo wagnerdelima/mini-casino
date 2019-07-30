@@ -171,6 +171,8 @@ class Wallet(models.Model):
         win_amount = spin_amount * 2
         choice = random.choice(['won', 'lost'])
         try:
+            # the smallest wagering requirement
+            # to induce the user has change to wagering
             bonus = Bonus.objects.filter(
                 bonus_money__gt=0,
                 is_bonus_depleted=False
@@ -198,11 +200,11 @@ class Wallet(models.Model):
                 bonus.save()
                 self.save()
         except (IntegrityError, Bonus.DoesNotExist):
-            print('Could not spin amount')
+            logging.error('Could not spin amount')
 
         return win_amount, spin_amount, choice
 
-    def grant_wagered(self, wagered_amount: float):
+    def grant_wagered(self, wagered_amount: float) -> None:
         self.real_money += wagered_amount
         self.save()
 

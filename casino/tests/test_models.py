@@ -44,9 +44,8 @@ class BonusTestCase(TestCase):
         self.assertTrue(self.bonus.is_bonus_depleted)
 
     def test_deplete_bonus_exception_fail(self):
-        with mock.patch('casino.models.transaction.atomic')\
+        with mock.patch('casino.models.transaction.atomic') \
                 as mock_atomic:
-
             mock_atomic.side_effect = IntegrityError
             with mock.patch('casino.models.logging') as mock_log:
                 self.bonus.deplete_bonus()
@@ -70,9 +69,8 @@ class BonusTestCase(TestCase):
 
     def test_give_login_bonus_exception_fail(self):
         bonus = make(Bonus, customer=self.user)
-        with mock.patch('casino.models.transaction.atomic')\
+        with mock.patch('casino.models.transaction.atomic') \
                 as mock_atomic:
-
             mock_atomic.side_effect = IntegrityError
             with mock.patch('casino.models.logging') as mock_log:
                 bonus.give_login_bonus()
@@ -149,7 +147,6 @@ class WalletTestCase(TestCase):
         self.assertEqual(abs(amount), wallet.real_money)
 
     def test_deposit_amount_fail(self):
-        bonus = make(Bonus, customer=self.user)
         with mock.patch('casino.models.transaction.atomic') \
                 as mock_atomic:
             mock_atomic.side_effect = IntegrityError
@@ -157,3 +154,76 @@ class WalletTestCase(TestCase):
                 wallet = make(Wallet, customer=self.user)
                 wallet.deposit_amount(110)
                 mock_log.error.called_once()
+
+    def test_spin_win_with_real_money_success(self):
+        deposit_amount = 200
+        wallet = make(Wallet, customer=self.user)
+        wallet.deposit_amount(deposit_amount)
+        previous_money = wallet.real_money
+
+        with mock.patch('casino.models.random.choice') as mock_choice:
+            mock_choice.return_value = 'won'
+            win, _, _ = wallet.spin()
+
+            self.assertEqual(previous_money + win, wallet.real_money)
+
+    def test_spin_win_with_bonus_money_success(self):
+        deposit_amount = 200
+        wallet = make(Wallet, customer=self.user)
+        wallet.deposit_amount(deposit_amount)
+        wallet.real_money = 0
+
+        with mock.patch('casino.models.random.choice') as mock_choice:
+            mock_choice.return_value = 'won'
+            win, _, _ = wallet.spin()
+
+            bonus = Bonus.objects.filter(
+                bonus_money__gt=0,
+                is_bonus_depleted=False
+            ).order_by('-wagering_requirement')[0]
+
+            self.assertEqual(
+                wallet.casino_bonus_deposit + win,
+                bonus.bonus_money
+            )
+
+    def test_spin_lose_with_real_money_success(self):
+        deposit_amount = 200
+        wallet = make(Wallet, customer=self.user)
+        wallet.deposit_amount(deposit_amount)
+        previous_money = wallet.real_money
+        amount_lost = wallet.amount_lost
+
+        with mock.patch('casino.models.random.choice') as mock_choice:
+            mock_choice.return_value = 'lost'
+            _, lost, _ = wallet.spin()
+
+            self.assertEqual(previous_money - lost, wallet.real_money)
+            self.assertEqual(amount_lost + lost, wallet.amount_lost)
+
+    def test_spin_lose_with_bonus_money_success(self):
+        deposit_amount = 200
+        wallet = make(Wallet, customer=self.user)
+        wallet.deposit_amount(deposit_amount)
+        wallet.real_money = 0
+
+        with mock.patch('casino.models.random.choice') as mock_choice:
+            mock_choice.return_value = 'lost'
+            _, lost, _ = wallet.spin()
+
+            bonus = Bonus.objects.filter(
+                bonus_money__gt=0,
+                is_bonus_depleted=False
+            ).order_by('-wagering_requirement')[0]
+
+            self.assertEqual(
+                wallet.casino_bonus_deposit - lost,
+                bonus.bonus_money
+            )
+
+    def test_grant_wagered_success(self):
+        amount = 100
+        wallet = make(Wallet, customer=self.user)
+        wallet.real_money = amount
+        wallet.grant_wagered(amount)
+        self.assertEqual(200, wallet.real_money)
